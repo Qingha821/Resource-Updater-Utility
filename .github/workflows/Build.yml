@@ -2,7 +2,7 @@ name: Build
 on: [pull_request, push]
 
 jobs:
-  build:
+  Build:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout Repository
@@ -22,6 +22,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Mod-Artifacts
-          path: 
+          path: |
             build/libs/*.jar
             !build/libs/*-sources.jar
