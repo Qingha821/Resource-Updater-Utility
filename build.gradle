@@ -28,10 +28,10 @@ dependencies {
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-	include implementation('commons-codec:commons-codec:1.18')
+	include implementation('commons-codec:commons-codec:1.15')
     
     	// 如果使用 Fabric Loom
-    	modImplementation 'commons-codec:commons-codec:1.18'
+    	modImplementation 'commons-codec:commons-codec:1.15'
 	
 }
 
