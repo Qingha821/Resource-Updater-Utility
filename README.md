@@ -21,7 +21,6 @@
 - **Smart caching**: Reduces redundant downloads  
 - **Bandwidth control**: Configurable speed limits  
 
----
 
 ## 📋 **Compatibility**  
 | Component       | Requirement                                                                   |  
@@ -31,7 +30,6 @@
 | Java            | Version 17+                                                                   |  
 | OS              | Windows, Linux, macOS                                                         |  
 
----
 
 ## 🛠️ **Installation**  
 ### **Client Setup**  
@@ -39,7 +37,6 @@
 2. Place in `.minecraft/mods/`  
 3. Launch Minecraft
 
----
 
 ## 🔄 **How It Works**  
 1. **Server** hosts resources metadata
@@ -47,7 +44,6 @@
 3. **User** waits download via a sleek GUI  
 4. **System** decrypts and installs seamlessly
 
----
 
 ## ⚙️ **Configuration**  
 Edit `config/resourcepackupdater.json` (Haven't completed this method yet):  
@@ -60,7 +56,6 @@ Edit `config/resourcepackupdater.json` (Haven't completed this method yet):
 ```
 > **Warning**: Server-side PHP required for full functionality *(host in a separate repo in my Github)*.  
 
----
 
 ## ❓ **FAQ**  
 
@@ -73,13 +68,11 @@ Yes! Just press ESC. (But nobody do this uhn? Without mods can they join the mod
 ### **How to update packs?**  
 Replace the server’s files and clients auto-update on restart.  
 
----
 
 ## ⚠️ **Security Best Practices**  
 - **Always** use HTTPS for downloads.  
 - **Never** disable checksum validation in production.  
 
----
 
 ## 📜 **License**  
 MIT License
