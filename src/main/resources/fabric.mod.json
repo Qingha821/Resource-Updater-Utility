@@ -1,0 +1,35 @@
+{
+	"schemaVersion": 1,
+	"id": "ruu",
+	"version": "${version}",
+	"name": "Resource-Updater-Utility",
+	"description": "A utility mod for updating resources from a dedicated server in Minecraft.",
+	"authors": [
+		"Qingha821",
+		"Zbx1425"
+	],
+	"contact": {
+		"homepage": "https://www.sparkpixel.top",
+		"sources": "https://github.com/Qingha821/Resource-Updater-Utility"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/ruu/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"cn.sparkpixel.ResourceUpdaterUtility"
+		],
+		"client": [
+			"cn.sparkpixel.ResourceUpdaterUtilityClient"
+		]
+	},
+	"mixins": [
+		"ruu.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.16.14",
+		"minecraft": "~1.20.1",
+		"java": ">=17",
+		"fabric-api": "*"
+	}
+}
