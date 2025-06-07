@@ -3,13 +3,13 @@
 	"id": "resource-synchronization",
 	"version": "${version}",
 	"name": "Resource-Synchronization",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"description": "A simple mod that can automatically sync mods and resourcepacks from a server!",
 	"authors": [
-		"Me!"
+		"Qingha821",
+		"Zbx1425"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"sources": "https://github.com/Qingha821/Resource-Synchronization-Release"
 	},
 	"license": "CC0-1.0",
 	"icon": "assets/resource-synchronization/icon.png",
@@ -37,8 +37,5 @@
 		"minecraft": "~1.20.1",
 		"java": ">=17",
 		"fabric-api": "*"
-	},
-	"suggests": {
-		"another-mod": "*"
 	}
 }
