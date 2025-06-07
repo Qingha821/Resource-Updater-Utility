@@ -1,0 +1,127 @@
+package github.qingha.mixin.client;
+
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import github.qingha.ResourceSynchronizationClient;
+import github.qingha.drm.AssetEncryption;
+import github.qingha.drm.ServerLockRegistry;
+import github.qingha.drm.WrappedResourceOutput;
+import net.minecraft.DetectedVersion;
+import net.minecraft.FileUtil;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.AbstractPackResources;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.PathPackResources;
+import net.minecraft.server.packs.resources.IoSupplier;
+import org.apache.commons.io.IOUtils;
+import org.spongepowered.asm.mixin.Final;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+
+@Mixin(PathPackResources.class)
+public abstract class FolderPackResourcesMixin extends AbstractPackResources {
+
+    @Unique
+    private Path canonicalRoot;
+
+    @Unique
+    private Path getCanonicalRoot() {
+        if (canonicalRoot == null) {
+            try {
+                canonicalRoot = root.toRealPath();
+            } catch (IOException e) {
+                canonicalRoot = root;
+            }
+        }
+        return canonicalRoot;
+    }
+
+    private FolderPackResourcesMixin(String string, boolean bl) { super(string, bl); }
+
+    @Shadow @Final private Path root;
+
+    @Inject(method = "getRootResource", at = @At("HEAD"), cancellable = true)
+    public void getRootResource(String[] elements, CallbackInfoReturnable<IoSupplier<InputStream>> cir) {
+        if (getCanonicalRoot().equals(ResourceSynchronizationClient.CONFIG.packBaseDirFile.value)) {
+            Path path = FileUtil.resolvePath(this.root, List.of(elements));
+            if (Files.exists(path)) {
+                if (Arrays.equals(elements, new String[] { "pack.mcmeta" })) {
+                    cir.setReturnValue(() -> patchPackMeta(AssetEncryption.wrapInputStream(new FileInputStream(path.toFile()))));
+                } else {
+                    cir.setReturnValue(() -> AssetEncryption.wrapInputStream(new FileInputStream(path.toFile())));
+                }
+            } else {
+                cir.setReturnValue(null);
+            }
+        }
+    }
+
+    @Inject(method = "getResource(Lnet/minecraft/server/packs/PackType;Lnet/minecraft/resources/ResourceLocation;)Lnet/minecraft/server/packs/resources/IoSupplier;", at = @At("HEAD"), cancellable = true)
+    void getResource(PackType packType, ResourceLocation location, CallbackInfoReturnable<IoSupplier<InputStream>> cir) {
+        if (getCanonicalRoot().equals(ResourceSynchronizationClient.CONFIG.packBaseDirFile.value)) {
+            Path path = this.root.resolve(packType.getDirectory()).resolve(location.getNamespace());
+            var decomposeResult = FileUtil.decomposePath(location.getPath()).get();
+            if (decomposeResult.left().isEmpty()) {
+                cir.setReturnValue(null);
+                return;
+            }
+            Path path2 = FileUtil.resolvePath(path, decomposeResult.left().get());
+            if (ServerLockRegistry.shouldRefuseProvidingFile(path2.toString())) {
+                cir.setReturnValue(null);
+                return;
+            }
+            if (Files.exists(path2)) {
+                cir.setReturnValue(() -> AssetEncryption.wrapInputStream(new FileInputStream(path2.toFile())));
+            } else {
+                cir.setReturnValue(null);
+            }
+        }
+    }
+
+    @WrapMethod(method = "listResources")
+    void getResources(PackType packType, String namespace, String path, ResourceOutput resourceOutput, Operation<Void> original) {
+        if (getCanonicalRoot().equals(ResourceSynchronizationClient.CONFIG.packBaseDirFile.value)) {
+            if (ServerLockRegistry.shouldRefuseProvidingFile(null)) {
+                return;
+            }
+
+            original.call(packType, namespace, path, new WrappedResourceOutput(resourceOutput));
+            return;
+        }
+
+        original.call(packType, namespace, path, resourceOutput);
+    }
+
+    @Inject(method = "getNamespaces", at = @At("HEAD"), cancellable = true)
+    void getNamespaces(PackType type, CallbackInfoReturnable<Set<String>> cir) {
+        if (getCanonicalRoot().equals(ResourceSynchronizationClient.CONFIG.packBaseDirFile.value)) {
+            if (ServerLockRegistry.shouldRefuseProvidingFile(null)) {
+                cir.setReturnValue(Collections.emptySet());
+            }
+        }
+    }
+
+    @Unique
+    private static InputStream patchPackMeta(InputStream inputStream) throws IOException {
+        JsonObject jsonObject = JsonParser.parseString(IOUtils.toString(inputStream, StandardCharsets.UTF_8)).getAsJsonObject();
+        jsonObject.getAsJsonObject("pack").addProperty("pack_format", DetectedVersion.tryDetectVersion().getPackVersion(PackType.CLIENT_RESOURCES));
+        return IOUtils.toInputStream(jsonObject.toString(), StandardCharsets.UTF_8);
+    }
+}

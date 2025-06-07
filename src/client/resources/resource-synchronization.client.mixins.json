@@ -1,0 +1,13 @@
+{
+	"required": true,
+	"package": "github.qingha.mixin.client",
+	"compatibilityLevel": "JAVA_17",
+	"client": [
+		"FolderPackResourcesMixin",
+		"MultiPackResourceManagerMixin",
+		"MinecraftMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}
