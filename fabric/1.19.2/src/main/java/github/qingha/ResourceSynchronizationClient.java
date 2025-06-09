@@ -137,7 +137,7 @@ public class ResourceSynchronizationClient implements ClientModInitializer {
 			}
 		} catch (Exception ignored) { }
 
-		ServerLockRegistry.updateLocalServerLock(ResourceSynchronizationClient.CONFIG.packBaseDirFile.value);
+		ServerLockRegistry.updateLocalServerLock(ResourceSynchronizationClient.CONFIG.packBaseDirFile.value.toFile());
 		GlHelper.resetGlStates();
 	}
 
