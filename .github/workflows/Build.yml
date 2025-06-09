@@ -23,5 +23,5 @@ jobs:
         with:
           name: Build Artifacts
           path: |
-            build/libs/*.jar
-            !build/libs/*-sources.jar
+            fabric/*/build/libs/*.jar
+            !fabric/*/build/libs/*-sources.jar
