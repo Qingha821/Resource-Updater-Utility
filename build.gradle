@@ -1,7 +1,2 @@
 group "github.qingha"
 version rootProject.properties.version
-
-dependencies {
-    include implementation('commons-codec:commons-codec:1.15')
-    modImplementation 'commons-codec:commons-codec:1.15'
-}
