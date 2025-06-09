@@ -1,0 +1,87 @@
+package github.qingha.mixin;
+
+import github.qingha.ResourceSynchronizationClient;
+import github.qingha.drm.AssetEncryption;
+import github.qingha.drm.ServerLockRegistry;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.AbstractPackResources;
+import net.minecraft.server.packs.FolderPackResources;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.ResourcePackFileNotFoundException;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Set;
+import java.util.function.Predicate;
+
+@Mixin(FolderPackResources.class)
+public abstract class FolderPackResourcesMixin extends AbstractPackResources {
+
+    @Unique
+    private File canonicalFile;
+
+    @Unique
+    private File getCanonicalFile() {
+        if (canonicalFile == null) {
+            try {
+                canonicalFile = file.getCanonicalFile();
+            } catch (IOException e) {
+                canonicalFile = file;
+            }
+        }
+        return canonicalFile;
+    }
+
+    private FolderPackResourcesMixin(File file) { super(file); }
+
+    @Shadow
+    private File getFile(String string) { return null; }
+
+    @Inject(method = "getResource", at = @At("HEAD"), cancellable = true)
+    void getResource(String resourcePath, CallbackInfoReturnable<InputStream> cir) throws IOException {
+        if (getCanonicalFile().equals(ResourceSynchronizationClient.CONFIG.packBaseDirFile.value)) {
+            File file = this.getFile(resourcePath);
+            if (file == null || ServerLockRegistry.shouldRefuseProvidingFile(resourcePath)) {
+                throw new ResourcePackFileNotFoundException(this.file, resourcePath);
+            }
+            FileInputStream fis = new FileInputStream(file);
+            cir.setReturnValue(AssetEncryption.wrapInputStream(fis));
+            cir.cancel();
+        }
+    }
+
+    @Inject(method = "hasResource", at = @At("HEAD"), cancellable = true)
+    void hasResource(String resourcePath, CallbackInfoReturnable<Boolean> cir) {
+        if (getCanonicalFile().equals(ResourceSynchronizationClient.CONFIG.packBaseDirFile.value)) {
+            if (ServerLockRegistry.shouldRefuseProvidingFile(resourcePath)) {
+                cir.setReturnValue(false); cir.cancel();
+            }
+        }
+    }
+    @Inject(method = "getResources", at = @At("HEAD"), cancellable = true)
+    void getResources(PackType packType, String string, String string2, Predicate<ResourceLocation> predicate, CallbackInfoReturnable<Collection<ResourceLocation>> cir) {
+        if (getCanonicalFile().equals(ResourceSynchronizationClient.CONFIG.packBaseDirFile.value)) {
+            if (ServerLockRegistry.shouldRefuseProvidingFile(null)) {
+                cir.setReturnValue(Collections.emptyList()); cir.cancel();
+            }
+        }
+    }
+    @Inject(method = "getNamespaces", at = @At("HEAD"), cancellable = true)
+    void getNamespaces(PackType type, CallbackInfoReturnable<Set<String>> cir) {
+        if (getCanonicalFile().equals(ResourceSynchronizationClient.CONFIG.packBaseDirFile.value)) {
+            if (ServerLockRegistry.shouldRefuseProvidingFile(null)) {
+                cir.setReturnValue(Collections.emptySet()); cir.cancel();
+            }
+        }
+    }
+}

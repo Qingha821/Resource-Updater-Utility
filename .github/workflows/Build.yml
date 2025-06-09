@@ -3,30 +3,28 @@
 # certain platforms or Java versions, and provides a first line of defence
 # against bad commits.
 
-name: Build
+name: build
 on: [pull_request, push]
 
 jobs:
-  Build:
+  build:
     runs-on: ubuntu-24.04
     steps:
-      - name: Checkout Repository
+      - name: checkout repository
         uses: actions/checkout@v4
-      - name: Validate Gradle Wrapper
+      - name: validate gradle wrapper
         uses: gradle/actions/wrapper-validation@v4
-      - name: Setup JDK
+      - name: setup jdk
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'microsoft'
-      - name: Make Gradle Wrapper Executable
+      - name: make gradle wrapper executable
         run: chmod +x ./gradlew
-      - name: Build
+      - name: build
         run: ./gradlew build
-      - name: Capture Build Artifacts
+      - name: capture build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Build Artifacts
-          path: |
-            build/libs/*.jar
-            !build/libs/*-sources.jar
+          name: Artifacts
+          path: build/libs/

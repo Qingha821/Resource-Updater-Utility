@@ -1,0 +1,104 @@
+package github.qingha.drm;
+
+import org.apache.commons.io.IOUtils;
+
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.util.Arrays;
+
+public class AssetEncryption {
+
+    private static final byte[] HEADER_MAGIC = "RESOURCE123".getBytes(StandardCharsets.UTF_8);
+
+    public static boolean isFisEncrypted(FileInputStream fis) throws IOException {
+        fis.getChannel().position(0);
+        boolean result = Arrays.equals(fis.readNBytes(HEADER_MAGIC.length), HEADER_MAGIC);
+        if (!result) fis.getChannel().position(0);
+        return result;
+    }
+
+    public static InputStream wrapInputStream(FileInputStream fis) throws IOException {
+        if (isFisEncrypted(fis)) {
+            return decryptInputStream(fis);
+        } else {
+            return fis;
+        }
+    }
+
+    public static InputStream wrapInputStream(InputStream is) throws IOException {
+        byte[] header = is.readNBytes(HEADER_MAGIC.length);
+        if (header.length != HEADER_MAGIC.length) {
+            return new ByteArrayInputStream(header);
+        }
+        if (!Arrays.equals(header, HEADER_MAGIC)) {
+            return new SequenceInputStream(new ByteArrayInputStream(header), is);
+        }
+        return decryptInputStream(is);
+    }
+
+    private static InputStream decryptInputStream(InputStream is) throws IOException {
+        try (DataInputStream dis = new DataInputStream(is)) {
+            int versionMajor = dis.readInt();
+            int versionMinor = dis.readInt();
+            byte[] dContent;
+            MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
+            byte[] key = dis.readNBytes(32);
+            SecretKeySpec aesKey = new SecretKeySpec(key, "AES");
+            byte[] iv = Arrays.copyOfRange(sha256.digest(key), 0, 16);
+            IvParameterSpec aesIv = new IvParameterSpec(iv);
+
+            int len = dis.readInt();
+            byte[] eContent = dis.readNBytes(len);
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher.init(Cipher.DECRYPT_MODE, aesKey, aesIv);
+            dContent = cipher.doFinal(eContent);
+            return new ByteArrayInputStream(dContent);
+        } catch (Exception ex) {
+            throw new IOException(ex);
+        }
+    }
+
+    public static void writeEncrypted(byte[] src, File target) throws IOException {
+        byte[] eContent, key;
+        try {
+            MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
+            KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
+            keyGenerator.init(256);
+            key = keyGenerator.generateKey().getEncoded();
+
+            SecretKeySpec aesKey = new SecretKeySpec(key, "AES");
+            byte[] iv = Arrays.copyOfRange(sha256.digest(key), 0, 16);
+            IvParameterSpec aesIv = new IvParameterSpec(iv);
+
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            cipher.init(Cipher.ENCRYPT_MODE, aesKey, aesIv);
+            eContent = cipher.doFinal(src);
+        } catch (Exception ex) {
+            throw new IOException(ex);
+        }
+
+        try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(target))) {
+            DataOutputStream dos = new DataOutputStream(bos);
+            dos.write("RESOURCE123".getBytes(StandardCharsets.UTF_8));
+            dos.writeInt(1);
+            dos.writeInt(0);
+            dos.write(key);
+            dos.writeInt(eContent.length);
+            dos.write(eContent);
+        }
+    }
+
+    public static void encryptIfRaw(File target) throws IOException {
+        byte[] src;
+        try (FileInputStream fis = new FileInputStream(target)) {
+            if (isFisEncrypted(fis)) return;
+            src = IOUtils.toByteArray(fis);
+        }
+        writeEncrypted(src, target);
+    }
+}
