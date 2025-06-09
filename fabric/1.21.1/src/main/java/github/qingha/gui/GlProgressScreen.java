@@ -87,11 +87,13 @@ public class GlProgressScreen implements ProgressReceiver {
     }
 
 
-    public static final ResourceLocation PRELOAD_HEADER_TEXTURE =
-            new ResourceLocation(ResourceSynchronizationClient.MOD_ID, "textures/gui/header.png");
+    public static final ResourceLocation PRELOAD_HEADER_TEXTURE = ResourceLocation.parse(
+            ResourceSynchronizationClient.MOD_ID + ":textures/gui/header.png"
+    );
 
-    public static final ResourceLocation PRELOAD_BACKGROUND_TEXTURE =
-            new ResourceLocation(ResourceSynchronizationClient.MOD_ID, "textures/gui/background.png");
+    public static final ResourceLocation PRELOAD_BACKGROUND_TEXTURE = ResourceLocation.parse(
+            ResourceSynchronizationClient.MOD_ID + ":textures/gui/background.png"
+    );
 
     private static void drawBackground() {
         GlHelper.setMatScaledPixel();

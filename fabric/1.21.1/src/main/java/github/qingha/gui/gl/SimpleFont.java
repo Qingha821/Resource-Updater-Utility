@@ -29,8 +29,9 @@ public class SimpleFont {
     public SimpleFont(ResourceLocation textureLocation) {
         this.textureLocation = textureLocation;
 
-        ResourceLocation metadataLocation = new ResourceLocation(textureLocation.getNamespace(),
-                textureLocation.getPath().replace(".png", ".json"));
+        ResourceLocation metadataLocation = ResourceLocation.parse(
+                textureLocation.getNamespace() + ":" + textureLocation.getPath().replace(".png", ".json")
+        );
         JsonObject srcObj;
         try (InputStream metadataIs = getClass().getResourceAsStream("/assets/" + metadataLocation.getNamespace()
                 + "/" + metadataLocation.getPath())) {
