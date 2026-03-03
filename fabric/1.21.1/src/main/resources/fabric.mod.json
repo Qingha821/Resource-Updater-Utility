@@ -20,9 +20,6 @@
 		],
 		"client": [
 			"github.qingha.ResourceSynchronizationClient"
-		],
-		"preLaunch": [
-			"github.qingha.ResourceSynchronizationPreLaunch"
 		]
 	},
 	"mixins": [
